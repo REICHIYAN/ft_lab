@@ -1,7 +1,7 @@
-# train_lora.py
-\"\"\"TinyLlama-1.1B-Chat-v1.0 に LoRA を挿入して微調整するサンプル。
+"""TinyLlama-1.1B-Chat-v1.0 に LoRA を挿入して微調整するサンプル。
 LoRA アダプタは models/ft_lora 以下に保存されます。
-\"\"\"from peft import LoraConfig, get_peft_model
+"""
+from peft import LoraConfig, get_peft_model
 from training_utils import (
     TrainConfig,
     load_base_tokenizer,

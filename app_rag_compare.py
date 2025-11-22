@@ -1,12 +1,12 @@
-# app_rag_compare.py
-\"\"\"LangChain + LlamaIndex + vLLM で RAG + モデル比較を行うデモ。
+"""LangChain + LlamaIndex + vLLM で RAG + モデル比較を行うデモ。
 
 前提:
 - vLLM の OpenAI互換サーバが、以下のように起動している想定:
     - Full FT : http://localhost:8001/v1  （モデルID: "ft_full_tinyllama"）
 
 必要に応じて LoRA / QLoRA / Prefix 用のエンドポイントも追加してください。
-\"\"\"import argparse
+"""
+import argparse
 from typing import List
 
 from langchain_openai import ChatOpenAI

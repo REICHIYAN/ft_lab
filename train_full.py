@@ -1,7 +1,7 @@
-# train_full.py
-\"\"\"TinyLlama-1.1B-Chat-v1.0 を Full Fine-tuning（全層更新）する最小サンプル。
+"""TinyLlama-1.1B-Chat-v1.0 を Full Fine-tuning（全層更新）する最小サンプル。
 学習済みモデルは models/ft_full 以下に保存されます。
-\"\"\"from training_utils import (
+"""
+from training_utils import (
     TrainConfig,
     load_base_tokenizer,
     load_base_model,

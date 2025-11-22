@@ -1,7 +1,7 @@
-# train_qlora.py
-\"\"\"TinyLlama-1.1B-Chat-v1.0 に対する QLoRA（4bit量子化 + LoRA）サンプル。
+"""TinyLlama-1.1B-Chat-v1.0 に対する QLoRA（4bit量子化 + LoRA）サンプル。
 QLoRA アダプタは models/ft_qlora 以下に保存されます。
-\"\"\"import torch
+"""
+import torch
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 

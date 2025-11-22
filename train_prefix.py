@@ -1,7 +1,7 @@
-# train_prefix.py
-\"\"\"TinyLlama-1.1B-Chat-v1.0 に Prefix Tuning を適用するサンプル。
+"""TinyLlama-1.1B-Chat-v1.0 に Prefix Tuning を適用するサンプル。
 Prefix アダプタは models/ft_prefix 以下に保存されます。
-\"\"\"from peft import PrefixTuningConfig, get_peft_model
+"""
+from peft import PrefixTuningConfig, get_peft_model
 from training_utils import (
     TrainConfig,
     load_base_tokenizer,
