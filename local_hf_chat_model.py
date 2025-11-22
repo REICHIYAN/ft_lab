@@ -1,18 +1,19 @@
 # local_hf_chat_model.py
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Any
 from langchain_core.language_models import LLM
+from pydantic import Field
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+
 class LocalHFChatModel(LLM):
-    """
-    LangChain-compatible wrapper for local HuggingFace models.
-    """
-    model: Any = None
-    tokenizer: Any = None
+    """LangChain-compatible wrapper for local HuggingFace causal LM."""
+
+    model: Any = Field(...)
+    tokenizer: Any = Field(...)
     max_new_tokens: int = 256
     temperature: float = 0.3
     top_p: float = 0.9
@@ -22,18 +23,14 @@ class LocalHFChatModel(LLM):
         return "local_hf_chat"
 
     @classmethod
-    def from_pretrained(cls, model_path: str):
+    def from_pretrained(cls, model_path: str) -> "LocalHFChatModel":
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
-            torch_dtype=torch.float16 if DEVICE == "cuda" else torch.float32
+            torch_dtype=torch.float16 if DEVICE == "cuda" else torch.float32,
         ).to(DEVICE)
         model.eval()
-
-        return cls(
-            model=model,
-            tokenizer=tokenizer,
-        )
+        return cls(model=model, tokenizer=tokenizer)
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         inputs = self.tokenizer(prompt, return_tensors="pt").to(DEVICE)
