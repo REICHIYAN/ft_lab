@@ -14,3 +14,5 @@ llama-index>=0.10.0
 
 vllm>=0.4.0
 python-dotenv>=1.0.0
+llama-index-embeddings-huggingface
+sentence-transformers

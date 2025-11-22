@@ -1,21 +1,22 @@
 
-# TinyLlama Fine-Tuning Toolkit (English Section)
+# TinyLlama Fine-Tuning Toolkit (Updated — No vLLM)
 
 ---
 
 ## 🌐 Overview
 
-This repository provides a **compact, end-to-end fine-tuning, serving, and evaluation toolkit**  
+This repository provides a **compact, end-to-end fine-tuning and evaluation toolkit**
 for **TinyLlama-1.1B-Chat-v1.0**, enabling reproducible experiments across:
 
-- Full Fine-Tuning (FT)  
-- LoRA  
-- QLoRA  
-- vLLM serving  
-- RAG evaluation  
-- Unified model comparison utilities  
+- Full Fine-Tuning (FT)
+- LoRA
+- QLoRA
+- RAG evaluation (HuggingFace embeddings via LlamaIndex)
+- Unified model comparison utilities
 
-Prefix Tuning has been intentionally excluded in this version to keep the stack clean and minimal.
+vLLM is **not used in this project** and all related descriptions have been removed.
+
+Prefix Tuning is intentionally excluded to keep the stack minimal.
 
 ---
 
@@ -26,22 +27,20 @@ Prefix Tuning has been intentionally excluded in this version to keep the stack 
 │                Training Layer             │
 │  • Full FT (HF Trainer)                   │
 │  • LoRA (PEFT)                            │
-│  • QLoRA (PEFT + 4bit Quantization)       │
-│                                           │
+│  • QLoRA (4bit + LoRA)                    │
 └───────────────┬───────────────────────────┘
                 │
 ┌───────────────▼───────────────────────────┐
-│               Model Outputs                │
-│  models/ft_full/                           │
-│  models/ft_lora/                           │
-│  models/ft_qlora/                          │
+│               Model Outputs               │
+│  models/ft_full/                          │
+│  models/ft_lora/                          │
+│  models/ft_qlora/                         │
 └───────────────┬───────────────────────────┘
                 │
 ┌───────────────▼───────────────────────────┐
-│            Serving & Evaluation            │
-│  • vLLM OpenAI-compatible server           │
-│  • app_rag_compare.py (RAG pipeline)       │
-│  • compare_adapters.py                     │
+│            Evaluation Utilities           │
+│  • app_rag_compare.py (RAG pipeline)      │
+│  • compare_adapters.py                    │
 └────────────────────────────────────────────┘
 ```
 
@@ -50,27 +49,15 @@ Prefix Tuning has been intentionally excluded in this version to keep the stack 
 ## 📚 Fine-Tuning Methods
 
 ### **1. Full Fine-Tuning**
-All model parameters are updated via supervised fine-tuning (SFT).  
-This produces the highest capacity and quality, but requires significant GPU resources.
 
-Run:
 ```bash
 python train_full.py
 ```
 
 ---
 
-### **2. LoRA (Low-Rank Adaptation)**
-LoRA injects trainable low-rank matrices into attention projections,  
-training only these additional parameters while freezing the base model.
+### **2. LoRA**
 
-Characteristics:
-- Lightweight  
-- Fast  
-- Extremely memory efficient  
-- Adapter weights are tiny
-
-Run:
 ```bash
 python train_lora.py
 ```
@@ -78,70 +65,51 @@ python train_lora.py
 ---
 
 ### **3. QLoRA**
-QLoRA quantizes the model backbone to **4-bit NF4**,  
-while training LoRA adapters in fp16, drastically reducing VRAM usage.
 
-Characteristics:
-- Lowest VRAM consumption  
-- Works on 8–16GB GPUs  
-- Near-LoRA quality
-
-Run:
 ```bash
 python train_qlora.py
 ```
 
 ---
 
-## 🧪 Dataset
+## 🔍 RAG Evaluation (Updated)
 
-SFT demo dataset is located at:
+This project includes a simple RAG demo using **LlamaIndex** and **HuggingFace embeddings**.
 
-`data/toy_qa.jsonl`
+We use:
 
-Format:
-```json
-{"question": "...", "answer": "..."}
+- `llama-index-embeddings-huggingface`
+- `sentence-transformers`
+
+Example (inside `app_rag_compare.py`):
+
+```python
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+embed_model = HuggingFaceEmbedding(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 ```
 
----
-
-## 🚀 Serving with vLLM
-
-vLLM provides high-throughput inference through PagedAttention.
-
 Run:
-```bash
-python -m vllm.entrypoints.openai.api_server --model ./models/ft_full
-```
 
----
-
-## 🔍 RAG Evaluation
-
-Run:
 ```bash
 python app_rag_compare.py --docs_dir docs --question "Explain LoRA."
 ```
-
-Evaluates:
-- Embedding quality  
-- Retrieval differences  
-- Answer consistency  
 
 ---
 
 ## 🧭 Model Comparison
 
-Run:
 ```bash
 python compare_adapters.py
 ```
 
-Compares output for:
-- Full FT  
-- LoRA  
-- QLoRA  
+Compares:
+
+- Full FT
+- LoRA
+- QLoRA
 
 ---
 
@@ -154,11 +122,14 @@ llm_ft_tinyllama/
 ├── train_qlora.py
 ├── compare_adapters.py
 ├── app_rag_compare.py
+├── requirements.txt
 │
 ├── models/
 │   ├── ft_full/
 │   ├── ft_lora/
 │   └── ft_qlora/
+│
+├── docs/
 │
 └── data/
     └── toy_qa.jsonl
@@ -168,14 +139,31 @@ llm_ft_tinyllama/
 
 ## 🛠 Requirements
 
-- Python 3.10+  
-- PyTorch (CUDA)  
-- HuggingFace Transformers  
-- PEFT  
-- bitsandbytes  
-- vLLM  
+The following are required:
+
+```
+torch>=2.1.0
+transformers>=4.39.0
+accelerate>=0.27.0
+sentencepiece>=0.1.99
+einops>=0.7.0
+
+datasets>=2.18.0
+peft>=0.10.0
+bitsandbytes>=0.42.0
+
+langchain>=0.2.0
+langchain-openai>=0.1.0
+llama-index>=0.10.0
+
+python-dotenv>=1.0.0
+
+llama-index-embeddings-huggingface
+sentence-transformers
+```
 
 Install:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -184,194 +172,4 @@ pip install -r requirements.txt
 
 ## 🙌 Final Notes
 
-This repository is intended to be a **clean, extensible baseline** for LLM fine-tuning research.
-
----
-
-# TinyLlama 微調整ツールキット（日本語セクション）
-
----
-
-## 🌐 概要
-
-本リポジトリは、**TinyLlama-1.1B-Chat-v1.0 の微調整・推論・評価を一気通貫で扱える、最小構成の実験用キット**です。
-
-以下の構成をサポートします：
-
-- フル微調整（Full FT）  
-- LoRA  
-- QLoRA  
-- vLLM による高速推論  
-- RAG 評価  
-- モデル比較ユーティリティ  
-
-Prefix Tuning は本バージョンから除外済みです。
-
----
-
-## 🏗️ 技術スタック・アーキテクチャ
-
-```
-┌───────────────────────────────────────────┐
-│                学習レイヤー               │
-│  • Full FT (HF Trainer)                   │
-│  • LoRA (PEFT)                            │
-│  • QLoRA (4bit 量子化 + LoRA)             │
-│                                           │
-└───────────────┬───────────────────────────┘
-                │
-┌───────────────▼───────────────────────────┐
-│             モデル出力ディレクトリ         │
-│  models/ft_full/                           │
-│  models/ft_lora/                           │
-│  models/ft_qlora/                          │
-└───────────────┬───────────────────────────┘
-                │
-┌───────────────▼───────────────────────────┐
-│           推論・評価レイヤー               │
-│  • vLLM API サーバ                         │
-│  • app_rag_compare.py                      │
-│  • compare_adapters.py                     │
-└────────────────────────────────────────────┘
-```
-
----
-
-## 📚 微調整手法の説明
-
-### **1. フル微調整（Full FT）**
-モデル全パラメータを更新する、最も汎用的で高品質な手法。  
-ただし VRAM を大きく消費します。
-
-実行:
-```bash
-python train_full.py
-```
-
----
-
-### **2. LoRA**
-アテンション層に低ランク行列（A, B）を挿入し、  
-**その部分だけ学習する**省メモリ手法。
-
-特徴：
-- 本体モデルは凍結  
-- 学習が高速  
-- 省メモリ  
-- Adapter 重みが非常に小さい
-
-実行:
-```bash
-python train_lora.py
-```
-
----
-
-### **3. QLoRA**
-モデル本体を **4bit（NF4）量子化**し、  
-LoRA アダプタ部分のみ fp16 で学習する方式。
-
-特徴：
-- VRAM 使用量が最小  
-- 8〜16GB GPU で実用的  
-- LoRA と同等の品質
-
-実行:
-```bash
-python train_qlora.py
-```
-
----
-
-## 🧪 データセット
-
-データ：`data/toy_qa.jsonl`
-
-形式：
-```json
-{"question": "...", "answer": "..."}
-```
-
----
-
-## 🚀 vLLM による推論
-
-PagedAttention を使った高スループット推論。
-
-実行:
-```bash
-python -m vllm.entrypoints.openai.api_server --model ./models/ft_full
-```
-
----
-
-## 🔍 RAG 評価
-
-実行:
-```bash
-python app_rag_compare.py --docs_dir docs --question "Explain LoRA."
-```
-
-評価項目：
-- 埋め込み性能  
-- 検索品質  
-- 応答の一貫性  
-
----
-
-## 🧭 モデル比較
-
-実行:
-```bash
-python compare_adapters.py
-```
-
-比較対象：
-- Full FT  
-- LoRA  
-- QLoRA  
-
----
-
-## 📁 リポジトリ構成
-
-```
-llm_ft_tinyllama/
-├── train_full.py
-├── train_lora.py
-├── train_qlora.py
-├── compare_adapters.py
-├── app_rag_compare.py
-│
-├── models/
-│   ├── ft_full/
-│   ├── ft_lora/
-│   └── ft_qlora/
-│
-└── data/
-    └── toy_qa.jsonl
-```
-
----
-
-## 🛠 必要ライブラリ
-
-- Python 3.10+  
-- PyTorch (CUDA)  
-- HuggingFace Transformers  
-- PEFT  
-- bitsandbytes  
-- vLLM  
-
-インストール:
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 🙌 最後に
-
-本リポジトリは、TinyLlama を用いた LLM 微調整研究の  
-**クリーンで拡張性の高いベースライン**として設計されています。
-
+This repository is a **clean, extensible baseline** for TinyLlama fine‑tuning and LlamaIndex‑based RAG experiments.
