@@ -1,0 +1,3 @@
+vLLMはOpenAI互換APIサーバを提供できる高速推論エンジンです。
+Paged Attentionにより多数の同時リクエストを効率よく処理できます。
+このリポジトリでは、fine-tuningしたTinyLlamaをvLLMで公開し、LangChain + LlamaIndexから利用する構成をデモします。

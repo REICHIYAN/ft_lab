@@ -1,0 +1,2 @@
+LangChainとLlamaIndexは、RAGシステムを素早く構築するためによく組み合わせて使われます。
+LangChainはアプリケーションロジックやツール連携、LlamaIndexはドキュメントのインデックスと検索を担当します。
