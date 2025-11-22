@@ -1,6 +1,5 @@
-%%writefile data/toy_qa.jsonl
-{"question": "What is TinyLlama?", "answer": "TinyLlama is a 1.1B-parameter causal language model trained as a compact alternative to larger LLaMA-style models."}
-{"question": "How can I fine-tune TinyLlama?", "answer": "You can fine-tune TinyLlama using full fine-tuning, LoRA, QLoRA, or prefix/adapters. This repo provides minimal examples for each method."}
-{"question": "What is LoRA?", "answer": "LoRA is a parameter-efficient fine-tuning method that injects low-rank trainable matrices into selected linear layers, while keeping original model weights frozen."}
-{"question": "What is QLoRA?", "answer": "QLoRA combines 4-bit quantization of the base model with LoRA adapters, enabling low-memory fine-tuning without modifying the original weights."}
-{"question": "What is the goal of this project?", "answer": "The goal is to provide a clean, reproducible TinyLlama playground to compare full fine-tuning, LoRA, QLoRA, and prefix/adapters using a small toy QA dataset."}
+{"question": "What is TinyLlama?", "answer": "TinyLlama is a 1.1B-parameter causal language model designed as a compact LLaMA-style model."}
+{"question": "How can TinyLlama be fine-tuned?", "answer": "You can fine-tune TinyLlama using full fine-tuning, LoRA, QLoRA, or prefix tuning. This project provides working minimal examples for each."}
+{"question": "What is LoRA?", "answer": "LoRA is a parameter-efficient fine-tuning method that injects low-rank adapters into linear layers while keeping pretrained weights frozen."}
+{"question": "What is QLoRA?", "answer": "QLoRA combines 4-bit quantization with LoRA adapters to minimize GPU memory usage during fine-tuning."}
+{"question": "What is the purpose of this repo?", "answer": "It provides a clean TinyLlama playground for comparing full fine-tuning, LoRA, QLoRA, and prefix tuning using a small dataset."}
