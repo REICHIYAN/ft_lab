@@ -73,7 +73,7 @@ python train_qlora.py
 
 This project includes a simple RAG pipeline using LlamaIndex and HuggingFace embeddings.
 
-Example inside `app_rag_compare.py`:
+Example inside `app_rag_compare_llamaindex.py`:
 
 ```python
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -110,7 +110,7 @@ llm_ft_tinyllama/
 ├── train_lora.py
 ├── train_qlora.py
 ├── compare_adapters.py
-├── app_rag_compare.py
+├── app_rag_compare_llamaindex.py
 ├── requirements.txt
 │
 ├── models/
