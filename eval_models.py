@@ -52,7 +52,8 @@ except Exception:
     _HAS_RAGAS = False
 
 try:
-    import openai
+    # OpenAI Python SDK v1
+    from openai import OpenAI
     _HAS_OPENAI = True
 except Exception:
     _HAS_OPENAI = False
@@ -142,22 +143,32 @@ def load_examples(path: str) -> List[Example]:
 
 # ---------------- LLM-as-a-Judge utilities -----------------
 
+
 def call_judge_llm_openai(
+    client: "OpenAI",
     question: str,
     context: str,
     answers: Dict[str, str],
     model: str,
     temperature: float = 0.0,
 ) -> Dict[str, Any]:
+    """
+    Call OpenAI Chat Completions API (v1 client) as a judge.
 
+    Returns a dict:
+    {
+      "scores": {"ft_full": 8.5, "ft_lora": 8.0, "ft_qlora": 7.2},
+      "hallucinations": {"ft_full": false, "ft_lora": true, ...}
+    }
+    """
     prompt = (
         "You are an impartial evaluator.\n"
         "Given a question, supporting context, and three model answers, "
         "rate each answer from 0 to 10 and mark whether it contains hallucinations.\n\n"
         "Return ONLY valid JSON:\n"
         "{\n"
-        '  "scores": {"ft_full": 0-10, "ft_lora": 0-10, "ft_qlora": 0-10},\n'
-        '  "hallucinations": {"ft_full": true/false, "ft_lora": true/false, "ft_qlora": true/false}\n'
+        '  \"scores\": {\"ft_full\": 0-10, \"ft_lora\": 0-10, \"ft_qlora\": 0-10},\n'
+        '  \"hallucinations\": {\"ft_full\": true/false, \"ft_lora\": true/false, \"ft_qlora\": true/false}\n'
         "}\n\n"
         f"Question:\n{question}\n\nContext:\n{context}\n\n"
     )
@@ -165,13 +176,13 @@ def call_judge_llm_openai(
     for key in MODEL_KEYS:
         prompt += f"Answer ({key}):\n{answers.get(key, '')}\n\n"
 
-    resp = openai.ChatCompletion.create(
+    resp = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,
     )
 
-    content = resp["choices"][0]["message"]["content"]
+    content = resp.choices[0].message.content
     try:
         return json.loads(content)
     except Exception:
@@ -179,6 +190,7 @@ def call_judge_llm_openai(
 
 
 # ---------------- RAGAS utilities -----------------
+
 
 def compute_ragas_faithfulness(
     examples: List[Example],
@@ -188,9 +200,12 @@ def compute_ragas_faithfulness(
     if not _HAS_RAGAS:
         return {k: None for k in MODEL_KEYS}
 
-    results = {}
+    results: Dict[str, Optional[float]] = {}
     for model_key in MODEL_KEYS:
-        questions, answers, contexts, gts = [], [], [], []
+        questions: List[str] = []
+        answers: List[str] = []
+        contexts: List[List[str]] = []
+        gts: List[str] = []
 
         for ex, ans in zip(examples, per_model_answers[model_key]):
             if not ex.contexts:
@@ -220,6 +235,7 @@ def compute_ragas_faithfulness(
 
 # ---------------- BERTScore utilities -----------------
 
+
 def compute_bertscore(refs: List[str], cands: List[str], lang: str = "en") -> List[float]:
     if not _HAS_BERTSCORE:
         return []
@@ -229,11 +245,13 @@ def compute_bertscore(refs: List[str], cands: List[str], lang: str = "en") -> Li
 
 # ---------------- Accuracy utilities -----------------
 
+
 def normalize_text(s: str) -> str:
     return " ".join(s.strip().lower().split())
 
 
 # ---------------- Main evaluation -----------------
+
 
 def evaluate_models(
     examples: List[Example],
@@ -272,13 +290,12 @@ def evaluate_models(
                     compute_bertscore(refs, cands, lang=bert_lang)
                 )
 
-    # LLM-as-a-Judge
+    # LLM-as-a-Judge (OpenAI v1 client)
     if judge_model_name and _HAS_OPENAI:
-
         # 1) .env / 環境変数から取得
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
 
-        # 2) それでも無ければ対話的に入力（Colab / Notebook）
+        # 2) 無ければ対話的に入力（Colab / Notebook 用）
         if not api_key:
             try:
                 from getpass import getpass
@@ -287,10 +304,11 @@ def evaluate_models(
                 api_key = ""
 
         if api_key:
-            openai.api_key = api_key
+            client = OpenAI(api_key=api_key)
             for ex in examples:
                 context_text = "\n\n".join(c["text"] for c in ex.contexts)
                 judge_res = call_judge_llm_openai(
+                    client=client,
                     question=ex.question,
                     context=context_text,
                     answers=ex.answers,
@@ -306,13 +324,15 @@ def evaluate_models(
                         metrics[key].hallucination_flags.append(bool(hallucinations[key]))
         else:
             print("[WARN] No API key provided. Skipping Judge metrics.")
+    elif judge_model_name and not _HAS_OPENAI:
+        print("[WARN] openai package (v1) is not installed. Skipping Judge metrics.")
 
     # RAGAS
-    ragas_scores = {}
+    ragas_scores: Dict[str, Optional[float]] = {}
     if use_ragas:
         ragas_scores = compute_ragas_faithfulness(examples, answers_per_model)
 
-    summary = {}
+    summary: Dict[str, Dict[str, Any]] = {}
     for key in MODEL_KEYS:
         base = metrics[key].to_summary()
         if use_ragas:
@@ -347,10 +367,10 @@ def main() -> None:
     )
 
     print("\n=== Model Metrics Summary ===")
-    for key, metrics in summary.items():
+    for key, m in summary.items():
         print(f"\n[{key}]")
-        for m, v in metrics.items():
-            print(f"  {m}: {v}")
+        for name, val in m.items():
+            print(f"  {name}: {val}")
 
     with open(args.output_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
