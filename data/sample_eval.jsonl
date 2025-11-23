@@ -1,14 +1,1 @@
-{
-  "id": "q1",
-  "question": "...",
-  "contexts": [
-    {"doc_id": "d1", "text": "..."}
-  ],
-  "answers": {
-    "ft_full": "....",
-    "ft_lora": "....",
-    "ft_qlora": "...."
-  },
-  "reference_answer": "...",
-  "gold_doc_ids": ["d1"]
-}
+{"id":"q1","question":"...","contexts":[{"doc_id":"d1","text":"..."}],"answers":{"ft_full":"....","ft_lora":"....","ft_qlora":"...."},"reference_answer":"...","gold_doc_ids":["d1"]}
