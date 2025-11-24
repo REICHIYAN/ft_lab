@@ -32,8 +32,6 @@ and transparent ablation studies.
 
 ## Repository Structure
 
-*(excluding `.env` and `.gitignore`)*
-
 ```
 llm_ft_tinyllama/
 ├── app_rag_compare.py
