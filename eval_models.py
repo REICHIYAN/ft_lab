@@ -7,7 +7,6 @@ eval_models.py
 Evaluate three models (ft_full, ft_lora, ft_qlora) on:
 1. BERTScore-F1 (requires bert-score; optional)
 2. Task accuracy (exact / relaxed match; always available if reference exists)
-3. RAGAS faithfulness (requires ragas + LLM config; optional)
 
 Input: JSONL file, each line:
 {
@@ -32,20 +31,12 @@ import json
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 
-# Optional dependencies（無ければ該当指標はスキップ）
+# Optional dependency（無ければ BERTScore はスキップ）
 try:
     from bert_score import score as bert_score
     _HAS_BERTSCORE = True
 except Exception:
     _HAS_BERTSCORE = False
-
-try:
-    from ragas import evaluate as ragas_evaluate
-    from ragas.metrics import faithfulness as ragas_faithfulness
-    from datasets import Dataset as HFDataset
-    _HAS_RAGAS = True
-except Exception:
-    _HAS_RAGAS = False
 
 
 # プロジェクト内の命名に合わせて固定
@@ -115,51 +106,6 @@ def load_examples(path: str) -> List[Example]:
     return examples
 
 
-# ---------------- RAGAS utilities -----------------
-
-
-def compute_ragas_faithfulness(
-    examples: List[Example],
-    per_model_answers: Dict[str, List[str]],
-) -> Dict[str, Optional[float]]:
-
-    if not _HAS_RAGAS:
-        return {k: None for k in MODEL_KEYS}
-
-    results: Dict[str, Optional[float]] = {}
-    for model_key in MODEL_KEYS:
-        questions: List[str] = []
-        answers: List[str] = []
-        contexts: List[List[str]] = []
-        gts: List[str] = []
-
-        for ex, ans in zip(examples, per_model_answers[model_key]):
-            if not ex.contexts:
-                continue
-            questions.append(ex.question)
-            answers.append(ans)
-            contexts.append([c["text"] for c in ex.contexts])
-            gts.append(ex.reference_answer if ex.reference_answer else ans)
-
-        if not questions:
-            results[model_key] = None
-            continue
-
-        dataset = HFDataset.from_dict(
-            {
-                "question": questions,
-                "answer": answers,
-                "contexts": contexts,
-                "ground_truth": gts,
-            }
-        )
-        ragas_res = ragas_evaluate(dataset, metrics=[ragas_faithfulness])
-        # ragas の戻り値は Dataset 互換のオブジェクト（列名でアクセス）
-        results[model_key] = float(ragas_res["faithfulness"])
-
-    return results
-
-
 # ---------------- BERTScore utilities -----------------
 
 
@@ -190,7 +136,6 @@ def normalize_text(s: str) -> str:
 def evaluate_models(
     examples: List[Example],
     bert_lang: str = "en",
-    use_ragas: bool = False,
 ) -> Dict[str, Dict[str, Any]]:
 
     metrics = {k: ModelMetrics() for k in MODEL_KEYS}
@@ -233,24 +178,16 @@ def evaluate_models(
                     compute_bertscore(refs, cands, lang=bert_lang)
                 )
 
-    # RAGAS
-    ragas_scores: Dict[str, Optional[float]] = {}
-    if use_ragas:
-        ragas_scores = compute_ragas_faithfulness(examples, answers_per_model)
-
     summary: Dict[str, Dict[str, Any]] = {}
     for key in MODEL_KEYS:
-        base = metrics[key].to_summary()
-        if use_ragas:
-            base["ragas_faithfulness"] = ragas_scores.get(key)
-        summary[key] = base
+        summary[key] = metrics[key].to_summary()
 
     return summary
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Evaluate ft_full / ft_lora / ft_qlora across metrics."
+        description="Evaluate ft_full / ft_lora / ft_qlora (BERTScore + Accuracy)."
     )
     parser.add_argument(
         "--data_path",
@@ -263,11 +200,6 @@ def main() -> None:
         type=str,
         default="en",
         help="Language code for BERTScore (e.g. 'en', 'ja').",
-    )
-    parser.add_argument(
-        "--use_ragas",
-        action="store_true",
-        help="If set, compute RAGAS faithfulness (requires ragas).",
     )
     parser.add_argument(
         "--output_path",
@@ -283,7 +215,6 @@ def main() -> None:
     summary = evaluate_models(
         examples,
         bert_lang=args.bert_lang,
-        use_ragas=args.use_ragas,
     )
 
     print("\n=== Model Metrics Summary ===")
