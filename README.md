@@ -1,133 +1,152 @@
+TinyLlama Fine-Tuning Toolkit
 
-# TinyLlama Fine-Tuning Toolkit
+A compact, reproducible toolkit for fine-tuning, evaluating, and comparing
+TinyLlama-1.1B-Chat-v1.0 using Full FT, LoRA, and QLoRA.
 
-## Overview
+The project is designed for small-GPU environments, research experimentation,
+and transparent ablation studies.
 
-This repository provides a compact toolkit for fine‑tuning and evaluating **TinyLlama‑1.1B‑Chat‑v1.0**.  
-It supports:
+Features
+🔧 Fine-Tuning
 
-- Full Fine-Tuning (FT)
-- LoRA
-- QLoRA
-- RAG evaluation using LlamaIndex + HuggingFace embeddings
-- Model comparison utilities
+Full Fine-Tuning
 
-Prefix Tuning is not included.
+LoRA
 
----
+QLoRA
 
-## Architecture
+Shared training utilities (training_utils.py)
 
-```
-Training
-  • Full FT
-  • LoRA
-  • QLoRA
+📘 Evaluation Tools
 
-Model Outputs
-  • models/ft_full/
-  • models/ft_lora/
-  • models/ft_qlora/
+RAG evaluation（LlamaIndex / LangChain）
 
-Evaluation
-  • app_rag_compare.py
-  • compare_adapters.py
-```
+Retrieval-only metrics
 
----
+Model comparison（FT / LoRA / QLoRA）
 
-## Fine-Tuning Methods
+Local inference script (local_hf_chat_model.py)
 
-### 1. Full Fine-Tuning  
-Updates **all parameters** of the model.  
-Provides the highest model capacity but requires more GPU memory.
+🗂 Sample Data
 
-```
-python train_full.py
-```
+RAG document samples
 
----
+Small QA datasets
 
-### 2. LoRA  
-Adds low‑rank matrices to selected layers and **trains only those parameters**,  
-keeping the base model frozen.  
-Efficient in memory and compute.
+Note: Prefix Tuning is intentionally excluded.
 
-```
-python train_lora.py
-```
+Repository Structure
 
----
+（.env と .gitignore は除外）
 
-### 3. QLoRA  
-Quantizes the base model to **4‑bit** while training LoRA parameters in higher precision.  
-Minimizes memory usage while achieving performance close to LoRA.
-
-```
-python train_qlora.py
-```
-
----
-
-## RAG Evaluation
-
-This project includes a simple RAG pipeline using LlamaIndex and HuggingFace embeddings.
-
-Example inside `app_rag_compare_llamaindex.py`:
-
-```python
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-embed_model = HuggingFaceEmbedding("sentence-transformers/all-MiniLM-L6-v2")
-```
-
-Run:
-
-```
-python app_rag_compare.py --docs_dir docs --question "Explain LoRA."
-```
-
----
-
-## Model Comparison
-
-```
-python compare_adapters.py
-```
-
-Compares:
-
-- Full FT
-- LoRA
-- QLoRA
-
----
-
-## Repository Structure
-
-```
 llm_ft_tinyllama/
+├── app_rag_compare.py
+├── app_rag_compare_langchain.py
+├── app_rag_compare_llamaindex.py
+├── compare_adapters.py
+├── eval_models.py
+├── eval_retrieval.py
+├── local_hf_chat_model.py
+├── requirements.txt
+├── training_utils.py
 ├── train_full.py
 ├── train_lora.py
 ├── train_qlora.py
-├── compare_adapters.py
-├── app_rag_compare_llamaindex.py
-├── requirements.txt
 │
 ├── models/
 │   ├── ft_full/
 │   ├── ft_lora/
 │   └── ft_qlora/
 │
-├── docs/
-└── data/
-    └── toy_qa.jsonl
-```
+├── data/
+│   ├── toy_qa.jsonl
+│   └── sample_eval.jsonl
+│
+└── docs/
+    ├── sample1.txt
+    └── sample2.txt
 
----
+Fine-Tuning Scripts
+Full Fine-Tuning
 
-## Requirements
+Updates all parameters.
 
-```
+python train_full.py
+
+LoRA
+
+Parameter-efficient training with injected low-rank matrices.
+
+python train_lora.py
+
+QLoRA
+
+4-bit quantized base model + LoRA adapters.
+
+python train_qlora.py
+
+Training Utilities
+
+training_utils.py includes:
+
+dataset loading
+
+tokenizer setup
+
+model initialization
+
+training arguments
+
+evaluation hooks
+
+All training scripts share this module for consistent behavior.
+
+RAG Evaluation
+LlamaIndex Pipeline
+
+File: app_rag_compare_llamaindex.py
+
+python app_rag_compare.py     --docs_dir docs     --question "Explain LoRA."
+
+LangChain Pipeline
+
+File: app_rag_compare_langchain.py
+Compatible with LangChain 0.2+（Runnable / LCEL）。
+
+Model Comparison
+
+Compare FT / LoRA / QLoRA generations:
+
+python compare_adapters.py
+
+Outputs:
+
+aligned generations
+
+qualitative differences
+
+optional latency comparison
+
+Retrieval-Only Metrics
+python eval_retrieval.py --data data/sample_eval.jsonl
+
+Metrics:
+
+recall@k
+
+precision@k
+
+hit-rate
+
+Sample Data
+data/toy_qa.jsonl
+data/sample_eval.jsonl
+docs/sample1.txt
+docs/sample2.txt
+
+Useful for RAG demonstrations and baseline evaluations.
+
+Requirements
 torch>=2.1.0
 transformers>=4.39.0
 accelerate>=0.27.0
@@ -141,14 +160,11 @@ bitsandbytes>=0.42.0
 langchain>=0.2.0
 langchain-openai>=0.1.0
 llama-index>=0.10.0
-
-python-dotenv>=1.0.0
 llama-index-embeddings-huggingface
 sentence-transformers
-```
+
+python-dotenv>=1.0.0
 
 Install:
 
-```
 pip install -r requirements.txt
-```
