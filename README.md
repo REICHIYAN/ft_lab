@@ -133,7 +133,6 @@ Outputs:
 ---
 
 ## Retrieval-Only Metrics
-
 ```bash
 python eval_retrieval.py --data data/sample_eval.jsonl
 ```
@@ -142,6 +141,18 @@ Metrics:
 - recall@k  
 - precision@k  
 - hit-rate  
+
+---
+
+## Model Evaluation (FT / LoRA / QLoRA)
+```bash
+python eval_models.py --data_path data/sample_eval.jsonl
+```
+
+Metrics:
+- BERTScore-F1  
+- exact-match accuracy  
+- relaxed-match accuracy  
 
 ---
 
